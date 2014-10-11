@@ -1,0 +1,10 @@
+simple(gd.PDES.JACV(3,3)+gd.PDES.JACV(3,2)+gd.PDES.JACV(1,3))
+用matlab带的assmba组装的K
+用我的程序assem组装的KK
+ii = find(K);
+jj = find(KK);
+find(ii-jj) = [];
+所以K,KK非零元素位置相同
+K(ii)./KK(jj)都为1
+所以K,KK非零元素数值也相同
+K=KK

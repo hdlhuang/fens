@@ -1,16 +1,20 @@
 function FE = FECreate(dim,np)
-%  ¶¥µãÊı
+%  Number of points
+
 FE.NP = np;
-%  Î¬Êı
+
+%  Number of Dimensions ç»´æ•°
 FE.DIM = dim;
 FE.GAUSSINT = 1;
 %------------------------------------
-%  ¶ÀÁ¢×ø±êÊıÎªÎ¬Êı
-%  ¹ãÒå×ø±ê Generalized coordinate symbols(GCS)
+%  Independent coordinate number is DIM
+%  å¹¿ä¹‰åæ ‡
+%  Generalized coordinate symbols(GCS)
 FE.GCSSTR = genlist('g',dim);
 eval(['syms ' FE.GCSSTR ' real']);
 FE.GCS = eval(['[' FE.GCSSTR ']']);
-%  µÑ¿¨¶ù×ø±ê Descartes coordinate symbols(DCS)
+%  ç¬›å¡å„¿åæ ‡
+%  Descartes coordinate symbols(DCS)
 FE.DCSSTR = genlist('d',dim);
 eval(['syms ' FE.DCSSTR ' real']);
 FE.DCS = eval(['[' FE.DCSSTR ']']);
@@ -28,20 +32,20 @@ end
 nVeclist = genlist('nVec',dim);
 eval(['syms ' nVeclist ' real']);
 FE.nVec = eval(['[' nVeclist '];']);
-%  ¶şÎ¬Æ½ÃæÈı½ÇÔª
+%  äºŒç»´å¹³é¢ä¸‰è§’å…ƒ
 if dim == 2,
   %------------------------------------
-  %  Èı½ÇÔª
+  %  ä¸‰è§’å…ƒ
   %         A
   %        / \
   %       / P \
   %      B-----C
 
-  %  µÑ¿¨¶ù×ø±ê A=FE.PDCS(:,1);  B=FE.PDCS(:,2);  C=FE.PDCS(:,3);
+  %  ç¬›å¡å„¿åæ ‡ A=FE.PDCS(:,1);  B=FE.PDCS(:,2);  C=FE.PDCS(:,3);
   %  P = [d1;d2];
-  %  ¶¨Òå¹ãÒå×ø±êg1,g2Âú×ã
+  %  å®šä¹‰å¹¿ä¹‰åæ ‡g1,g2æ»¡è¶³
   %  P = g1*A + g2*B + (1-g1-g2)*C
-  %  ¹ãÒå×ø±ê ×ª±ä³É µÑ¿¨¶ù×ø±ê
+  %  å¹¿ä¹‰åæ ‡ è½¬å˜æˆ ç¬›å¡å„¿åæ ‡
   %  P = G2DA*[g1;g2]+G2DB
   syms g1 g2 d1 d2 eVol real;
   A = FE.PDCS(:,1);
@@ -54,19 +58,22 @@ if dim == 2,
   P = g1*A + g2*B + (1-g1-g2)*C;
   FE.G2DA = jacobian(P,FE.GCS); 
   FE.G2DB = simple(P - FE.G2DA*FE.GCS(:));
-  %  µÑ¿¨¶ù×ø±ê ×ª±ä³É ¹ãÒå×ø±ê
+  %  ç¬›å¡å„¿åæ ‡ è½¬å˜æˆ å¹¿ä¹‰åæ ‡
+  %  Descartes to Generalized
   %  D2GA = inv(G2DA) D2GB = -inv(G2DA)*G2DB
   %  [g1;g2] = D2GA*[d1;d2]+D2GB;
-  %  ÈİÒ×ÑéÖ¤
+  %  å®¹æ˜“éªŒè¯
   %  g1 = area2d(P,B,C)/area2d(A,B,C)
   %  g2 = area2d(P,C,A)/area2d(A,B,C)
   P = FE.DCS(:);
   f = [area2d(P,B,C); area2d(P,C,A)]/eVol;
   FE.D2GA = jacobian(f,P);
   FE.D2GB = simple(f - FE.D2GA*P);
-  %  Ìå»ı·Ö·¶Î§ ¡Òdg1 ¡ÒVEXP dg2
+  %  ä½“ç§¯åˆ†èŒƒå›´
+  %  âˆ«dg1 âˆ«VEXP dg2
   FE.INTVSTR = 'l_v=int(int(VEXP,g2,0,1-g1),g1,0,1);';
-  %  ±ß½ç»ı·Ö·¶Î§ ¡ÒBEXP dg
+  %  è¾¹ç•Œç§¯åˆ†èŒƒå›´
+  %  âˆ«BEXP dg
   FE.INTBSTR = 'g2 = 1-g1;l_b=int(BEXP,g1,0,1);';
   % Gauss Quadratic interior points and weights
   FE.QPGC = [	
@@ -94,17 +101,17 @@ if dim == 2,
 %     'g2 = 1-g1;l_b3=int(BEXP,g1,0,1);';
 %     'l_b = [l_b1 l_b2 l_b3];'};
   if np == 3,
-    %  ÈıµãÔª ShapeFunctionÎª
+    %  ä¸‰ç‚¹å…ƒ ShapeFunctionä¸º
     %    f1(P) = g1
     %    f2(P) = g2
     %    f3(P) = g3 = 1 - g1 - g2 
-    %  GCS TermsÏßĞÔ×éºÏ×é³É²»Í¬µÄShapeFunction, ÏîÊıÎª¶¥µãÊı
+    %  GCS Termsçº¿æ€§ç»„åˆç»„æˆä¸åŒçš„ShapeFunction, é¡¹æ•°ä¸ºé¡¶ç‚¹æ•°
     FE.GCST = '1 g1 g2';
-    %  ¶¥µãµÄ¹ãÒå×ø±ê
+    %  é¡¶ç‚¹çš„å¹¿ä¹‰åæ ‡
     FE.PGC = [  1 0 0; 0 1 0];
   elseif np == 6,
     %------------------------------------
-    %  ÁùµãÔª
+    %  å…­ç‚¹å…ƒ
     %           A
     %          / \
     %         /   \
@@ -113,7 +120,7 @@ if dim == 2,
     %      /         \
     %     B-----D-----C
     %
-    %  ShapeFunctionÎª
+    %  ShapeFunctionä¸º
     %    f1(P) = g1*(2*g1-1)
     %    f2(P) = g2*(2*g2-1)
     %    f3(P) = g3*(2*g3-1)
@@ -144,7 +151,7 @@ for p = 1:FE.NP % Row
   %   end
   a(p,:) = eval(gcststr);
 end
-% SFCoeffÃ¿ÁĞ¶ÔÓ¦Ò»¸öĞÎº¯Êı(Shape Function) 
+% SFCoeffæ¯åˆ—å¯¹åº”ä¸€ä¸ªå½¢å‡½æ•°(Shape Function) 
 FE.SFCoeff = inv(a);
 
 %--------------------------------------------------------------------------
@@ -168,6 +175,7 @@ function FE = test()
 %  Dg2iled explanation goes here
 FE = FECreate(2,6);
 
-%  ¼ÆËãÈı½ÇĞÎÃæ»ı
+%  Area of triangle
+%  è®¡ç®—ä¸‰è§’å½¢é¢ç§¯
 function a = area2d(A,B,C)
 a = det([B - A, C - A])/2;

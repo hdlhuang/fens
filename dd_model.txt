@@ -1,0 +1,101 @@
+<Parameters>
+NP = 3;DIM = 2;
+
+%-------------------------------------------------------
+<Variables>
+V,n
+
+%-------------------------------------------------------
+<Coefficients>
+% MKSA metre-kilogram(me)-second-ampere米千克秒安培(单位制)
+% CGS centimeter-gram-second 厘米-克-秒制, cgs 制
+
+%  在poisson方程中 左边为epsi d2v/dx2 右边为载流子浓度	所以epsi要换成cm-1 加上1/dx2,单位就是cm-3和,右边一样了别的常数也类推
+% Boltzmann constant in UI systems 
+c_kb0  = 1.380e-23;
+% Plank's constant in MKSA systems 
+c_hbar = 1.054e-34;
+
+% electron mass (Kg) 
+%c_m0		9.109534e-31kg
+% electron mass (1e4Kg) 
+%速度乘速度平方为J
+%而速度单位cm s-1
+c_m = 9.109534e-35;
+
+% electron charge (C) 
+c_qcharg = 1.602e-19;
+c_q2 = c_qcharg*c_qcharg;
+
+% dielectric constant in vacuum (F/cm) 
+c_eps0 = 8.854e-14;
+
+% relative dielectric constant 
+c_eps_Ge = 16;
+c_eps_Si = 11.9;
+c_eps_GaAs = 13.2;
+c_epsi = (c_eps0*c_eps_Si);
+c_ni_Ge = 2.4e13;
+c_ni_Si = 1.5e10;
+c_ni_GaAs = 1.6e6;
+
+% low-field electron mobility in GaAs at 77K (cm^2/Vs) 
+c_un0 = 25000;
+c_un0si = 1500;
+c_up0si = 450;
+
+% low-energy momentum relaxation time (s) 
+c_tp0 = (0.063*c_m*c_un0/c_qcharg);
+%c_tp0	 = (9e-13);
+c_tpn0 = (c_m*c_un0si/c_qcharg);
+c_tpp0 = (c_m*c_up0si/c_qcharg);
+
+% saturation velocity (cm/s) 
+c_vsat = 2e7;
+c_kb = (c_kb0/c_qcharg);
+
+% MKSA systems E = E(eV)*qcharg
+%Energy scale factor
+c_escl = c_qcharg;
+c_vscl = c_escl/c_qcharg;
+c_tscl = c_escl/c_kb0;
+c_cscl = 1;
+c_uscl = 1.0;
+%77k
+c_T0 = 77/c_tscl;
+c_qmcoef = c_hbar*c_hbar/c_escl;
+
+% 掺杂浓度
+c_Nd = 5e12;
+c_Na = 0;
+
+coeff_c = 1;	coeff_f = 10;
+c_Nd = 1;  c_Na = 0;  c_epsi = 1; c_q2 = 1;
+%迁移率 扩散系数
+c_u0 = 1; c_diff = 1;
+
+%-------------------------------------------------------
+<PDES>
+% 泊松方程 -div(eps*grad(V) + e*(Na-Nd+n) = 0
+% 方程乘以测试函数(Test Function)也有称为形函数(Shape Function）
+% 在三角元上积分，用分离变量法
+% 体积分 -div(eps*grad(V))*SF = 
+% 体积分 dot(eps*grad(V),grad(SF)) - 边界积分 dot(nVec,eps*grad(V)*SF)
+V,	dot(c_epsi*grad(V),grad(SF))+c_q2*(n+c_Na-c_Nd)*SF
+
+% 漂移扩散方程 div(j)=0, j=u*grad(V)*n + d*grad(n)
+n,	dot(c_u0*grad(V)+c_diff*grad(n),grad(SF))
+
+%-------------------------------------------------------
+<Boundary>
+% dd_mesh
+%V,[1:4] 1 V-1
+%n,[1:4] 1 n-5e12
+% torusmesh
+V,[1:8] 1 V-1
+n,[1:8] 1 n-5e12
+
+%-------------------------------------------------------
+<Mesh>	
+%D:\MATLAB6p5\work\work216\LoadSave\dd_mesh.m
+.\torusmesh.m
